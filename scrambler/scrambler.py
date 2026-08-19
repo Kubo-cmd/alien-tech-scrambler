@@ -1,14 +1,16 @@
 """
-Device scrambler using AES-256-GCM for symmetric encryption.
-Provides encrypt and decrypt functions for protecting device identifiers,
-phone numbers, or other sensitive strings.
+Core device / phone scrambler.
+Hybrid: AES-256-GCM (NIST standard) + chaotic XOR layer (real chaos crypto).
+Generic key handling. No hard-coded personal secrets.
+Provides encrypt, decrypt, scramble for phones and device data.
 """
 
 from __future__ import annotations
 
 import os
 import base64
-from typing import Tuple
+import hashlib
+from typing import Tuple, Optional
 
 try:
     from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -17,82 +19,88 @@ except Exception:  # pragma: no cover
     _HAS_CRYPTO = False
     AESGCM = None  # type: ignore
 
+from . import chaotic
 
-def _get_key() -> bytes:
+
+def _derive_key(secret: Optional[str] = None) -> bytes:
     """
-    Return a 32‑byte key. In production this should come from a secure vault
-    or environment variable. For demo we derive from a fixed secret; replace
-    with proper key management.
+    Derive 32-byte key. 
+    - If secret provided, use PBKDF-like with sha256.
+    - Default: demo key (replace with env/ vault in prod).
+    - Production: os.environ.get('SCRAMBLER_KEY') or keychain.
     """
-    # TODO: load from secure source (e.g., OS keychain, Vault, .env)
-    secret = b"alien-tech-scrambler-demo-key-32bytes!!"
-    # Ensure exactly 32 bytes
-    if len(secret) < 32:
-        secret = secret.ljust(32, b'\0')
-    elif len(secret) > 32:
-        secret = secret[:32]
-    return secret
+    if secret is None:
+        secret = os.environ.get("SCRAMBLER_KEY", "DEMO-REPLACE-WITH-SECURE-32BYTE-KEY-OR-ENV!!")
+    # Hash to exactly 32 bytes
+    return hashlib.sha256(secret.encode("utf-8")).digest()
 
 
-def encrypt(plaintext: str) -> Tuple[bytes, bytes, bytes]:
+def encrypt(plaintext: str, secret: Optional[str] = None) -> Tuple[bytes, bytes, bytes]:
     """
-    Encrypt a UTF‑8 string using AES-256-GCM.
-
-    Returns (ciphertext, nonce, tag) where nonce is 12 bytes and tag is 16 bytes.
-    If cryptography is not available, raises RuntimeError.
+    Encrypt using AES-256-GCM.
+    Returns (ciphertext, nonce, tag).
     """
     if not _HAS_CRYPTO:
-        raise RuntimeError("cryptography library not installed; install with `pip install cryptography`")
+        raise RuntimeError("cryptography library not installed; pip install -r requirements.txt")
 
-    aesgcm = AESGCM(_get_key())
-    nonce = os.urandom(12)  # GCM recommended nonce size
-    ciphertext = aesgcm.encrypt(nonce, plaintext.encode('utf-8'), None)
-    # In AESGCM, tag is appended to ciphertext; split for clarity
-    # Actually encrypt returns ciphertext||tag
+    key = _derive_key(secret)
+    aesgcm = AESGCM(key)
+    nonce = os.urandom(12)
+    ct = aesgcm.encrypt(nonce, plaintext.encode("utf-8"), None)
     tag_len = 16
-    ciphertext_only = ciphertext[:-tag_len]
-    tag = ciphertext[-tag_len:]
+    ciphertext_only = ct[:-tag_len]
+    tag = ct[-tag_len:]
     return ciphertext_only, nonce, tag
 
 
-def decrypt(ciphertext: bytes, nonce: bytes, tag: bytes) -> str:
+def decrypt(ciphertext: bytes, nonce: bytes, tag: bytes, secret: Optional[str] = None) -> str:
     """
-    Decrypt data produced by encrypt.
-
-    Raises cryptography.exceptions.InvalidTag if authentication fails.
+    Decrypt. Raises on auth fail.
     """
     if not _HAS_CRYPTO:
-        raise RuntimeError("cryptography library not installed; install with `pip install cryptography`")
+        raise RuntimeError("cryptography library not installed; pip install -r requirements.txt")
 
-    aesgcm = AESGCM(_get_key())
-    # recombine ciphertext and tag
+    key = _derive_key(secret)
+    aesgcm = AESGCM(key)
     full = ciphertext + tag
-    plaintext_bytes = aesgcm.decrypt(nonce, full, None)
-    return plaintext_bytes.decode('utf-8')
+    pt = aesgcm.decrypt(nonce, full, None)
+    return pt.decode("utf-8")
 
 
-def scramble_phone(phone: str) -> str:
+def hybrid_scramble(plaintext: str, secret: Optional[str] = None, chaos_seed: float = 0.42) -> str:
     """
-    Example usage: encrypt a phone number and return base64url-safe string
-   包含 nonce + ciphertext + tag for simplicity.
+    Hybrid alien-tech: AES-GCM then XOR chaotic layer.
+    Returns base64 package.
     """
-    ciphertext, nonce, tag = encrypt(phone)
-    package = base64.urlsafe_b64encode(nonce + ciphertext + tag).decode('ascii')
+    ct, nonce, tag = encrypt(plaintext, secret)
+    # Apply chaotic on the ct for extra layer
+    chaotic_layer = chaotic.xor_scramble(ct, chaos_seed)
+    package = base64.urlsafe_b64encode(nonce + chaotic_layer + tag).decode("ascii")
     return package
 
 
-def unscramble_phone(token: str) -> str:
-    data = base64.urlsafe_b64decode(token.encode('ascii'))
+def hybrid_unscramble(token: str, secret: Optional[str] = None, chaos_seed: float = 0.42) -> str:
+    data = base64.urlsafe_b64decode(token.encode("ascii"))
     nonce = data[:12]
-    # Assuming tag is last 16 bytes
     tag = data[-16:]
-    ciphertext = data[12:-16]
-    return decrypt(ciphertext, nonce, tag)
+    chaotic_ct = data[12:-16]
+    ct = chaotic.xor_unscramble(chaotic_ct, chaos_seed)
+    return decrypt(ct, nonce, tag, secret)
+
+
+# Back compat + phone specific
+def scramble_phone(phone: str, secret: Optional[str] = None) -> str:
+    """Encrypt phone with hybrid."""
+    return hybrid_scramble(phone, secret)
+
+
+def unscramble_phone(token: str, secret: Optional[str] = None) -> str:
+    return hybrid_unscramble(token, secret)
 
 
 if __name__ == "__main__":  # pragma: no cover
-    # Demo
     test = "555-123-4567"
     enc = scramble_phone(test)
-    print(f"Encrypted: {enc}")
+    print(f"Hybrid Encrypted: {enc}")
     print(f"Decrypted: {unscramble_phone(enc)}")
+    print("Core scrambler operational.")

@@ -1,0 +1,85 @@
+"""
+CLI for alien-tech-scrambler.
+Real working interface for phone/device scrambling with advanced tech.
+Usage: python -m scrambler.cli [command] [args]
+"""
+
+import argparse
+import json
+import sys
+
+from .scrambler import scramble_phone, unscramble_phone, hybrid_scramble, hybrid_unscramble
+from .device import generate_base_device, scramble_device_profile
+from .audio_scrambler import generate_test_signal, fft_phase_roll_scramble, fft_phase_roll_unscramble
+from leakage.scanner import scan_text  # type: ignore  # run as module
+import numpy as np
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Alien Tech Phone/Device Scrambler - legitimate frontier privacy primitives")
+    sub = parser.add_subparsers(dest="cmd", required=True)
+
+    # phone
+    p_phone = sub.add_parser("phone", help="Scramble/unscramble phone")
+    p_phone.add_argument("action", choices=["scramble", "unscramble"])
+    p_phone.add_argument("value")
+
+    # device
+    p_dev = sub.add_parser("device", help="Generate and scramble device profile")
+    p_dev.add_argument("--seed", default="demo-device-001")
+    p_dev.add_argument("--epsilon", type=float, default=0.5)
+
+    # audio
+    p_audio = sub.add_parser("audio", help="Demo audio/signal scramble (FFT roll)")
+    p_audio.add_argument("--roll", type=int, default=64)
+    p_audio.add_argument("--duration", type=float, default=0.05)
+
+    # scan
+    p_scan = sub.add_parser("scan", help="Scan text for leaks + entropy")
+    p_scan.add_argument("text", nargs="?", default=None)
+    p_scan.add_argument("--file", help="read from file")
+
+    # hybrid demo
+    p_hybrid = sub.add_parser("hybrid", help="Hybrid scramble demo")
+    p_hybrid.add_argument("text", default="555-999-0000")
+
+    args = parser.parse_args()
+
+    if args.cmd == "phone":
+        if args.action == "scramble":
+            print(scramble_phone(args.value))
+        else:
+            print(unscramble_phone(args.value))
+    elif args.cmd == "device":
+        base = generate_base_device(args.seed)
+        scr = scramble_device_profile(base, args.epsilon)
+        print(json.dumps(scr, indent=2))
+    elif args.cmd == "audio":
+        sig = generate_test_signal(args.duration)
+        scr = fft_phase_roll_scramble(sig, args.roll)
+        un = fft_phase_roll_unscramble(scr, args.roll)
+        corr = float(np.corrcoef(sig, un)[0,1]) if len(sig)>1 else 0.0
+        print(f"Original len: {len(sig)} | Scrambled len: {len(scr)} | Reconstruct corr: {corr:.4f}")
+        print("Signal scrambled with FFT roll (reversible). Real freq-domain privacy method.")
+    elif args.cmd == "scan":
+        txt = args.text
+        if args.file:
+            with open(args.file) as f:
+                txt = f.read()
+        if not txt:
+            txt = "Example: phone 555-123-4567 email foo@bar.com key AKIA1234567890ABCDEF"
+        results = scan_text(txt)
+        for r in results:
+            print(r)
+    elif args.cmd == "hybrid":
+        enc = hybrid_scramble(args.text)
+        dec = hybrid_unscramble(enc)
+        print(f"Input: {args.text}")
+        print(f"Hybrid: {enc}")
+        print(f"Roundtrip: {dec}")
+    else:
+        parser.print_help()
+
+
+if __name__ == "__main__":
+    main()

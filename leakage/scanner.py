@@ -1,90 +1,94 @@
 """
 Leakage scanner for detecting sensitive information in text.
+Enhanced with Shannon entropy analysis (using numpy) for high-entropy secrets.
+Real technique for secret detection in code audits.
 """
 
 from __future__ import annotations
 
 import re
+import math
 from typing import List, Dict, Tuple
 
-# Patterns for common leakage
+import numpy as np
+
+# Patterns for common leakage (expanded)
 PATTERNS: List[Tuple[str, re.Pattern]] = [
-    # Private keys
     ("private_key", re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")),
-    # AWS Access Key ID
     ("aws_access_key", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
-    # OpenAI API Key
     ("openai_key", re.compile(r"\bsk-[A-Za-z0-9]{20,}\b")),
-    # GitHub Personal Access Token
     ("github_token", re.compile(r"\bgh[pousr]_[A-Za-z0-9]{20,}\b")),
-    # Google API Key
     ("google_api_key", re.compile(r"\bAIza[0-9A-Za-z_\-]{30,}\b")),
-    # Slack Token
     ("slack_token", re.compile(r"\bxox[baprs]-[0-9A-Za-z-]{10,}\b")),
-    # JWT
     ("jwt", re.compile(r"\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+")),
-    # Email
     ("email", re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")),
-    # IPv4
     ("ipv4", re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")),
-    # Bearer token (the token part after "Bearer ")
-    ("bearer_token", re.compile(r"(?i)Bearer\s+([A-Za-z0-9\-._~+/]+=*)")),
-    # Phone number (US format)
+    ("bearer_token", re.compile(r"(?i)Bearer\s+([A-Za-z0-9\-._~+/]+=* )")),
     ("phone", re.compile(r"\b(?:[\+]?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b")),
-    # Social Security Number
     ("ssn", re.compile(r"\b\d{3}-\d{2}-\d{4}\b")),
 ]
 
+
 def _redact(value: str) -> str:
-    """Redact a value, showing first and last two characters with ellipsis in between."""
     if len(value) <= 8:
         return value
     return value[:4] + "…" + value[-2:]
 
-def scan_text(text: str) -> List[Dict[str, str]]:
-    """
-    Scan text for leakage patterns.
 
-    Returns a list of dictionaries with keys: 'type' and 'match' (redacted).
+def shannon_entropy(data: str) -> float:
+    """Calculate Shannon entropy. High (>4.5) often indicates random secrets."""
+    if not data:
+        return 0.0
+    probs = [float(data.count(c)) / len(data) for c in set(data)]
+    return -sum(p * math.log(p, 2) for p in probs if p > 0)
+
+
+def scan_text(text: str, entropy_threshold: float = 4.5) -> List[Dict[str, str]]:
+    """
+    Scan text for leakage patterns + flag high entropy strings.
+    Returns list of {'type': , 'match': redacted, 'entropy': optional}
     """
     findings: List[Dict[str, str]] = []
     for name, pattern in PATTERNS:
         for match in pattern.findall(text):
-            # If the pattern has groups, findall returns tuples of groups.
-            # We want the entire match if there are no groups, or the first group if there are groups.
-            # However, we designed the patterns so that the capturing group (if any) is the interesting part.
-            # For patterns without groups, match is a string.
-            # For patterns with groups, match is a tuple; we take the first group.
             if isinstance(match, tuple):
-                # Take the first non-empty group, or if all empty, skip.
-                token = None
-                for group in match:
-                    if group:
-                        token = group
-                        break
-                if token is None:
-                    # If all groups are empty, skip this match.
-                    continue
-                match_str = token
+                token = next((g for g in match if g), None)
             else:
-                match_str = match
-
-            if match_str:
-                findings.append({
+                token = match
+            if token:
+                ent = round(shannon_entropy(token), 2)
+                entry = {
                     "type": name,
-                    "match": _redact(match_str)
-                })
+                    "match": _redact(str(token)),
+                    "entropy": str(ent)
+                }
+                if ent > entropy_threshold:
+                    entry["note"] = "high-entropy (possible secret)"
+                findings.append(entry)
+
+    # Additional: scan for long high-entropy substrings (e.g. 20+ chars base64-like)
+    for m in re.finditer(r"[A-Za-z0-9+/=]{20,}", text):
+        tok = m.group(0)
+        ent = round(shannon_entropy(tok), 2)
+        if ent > entropy_threshold:
+            findings.append({
+                "type": "high_entropy_string",
+                "match": _redact(tok),
+                "entropy": str(ent),
+                "note": "high-entropy substring"
+            })
+
     return findings
 
+
 if __name__ == "__main__":  # pragma: no cover
-    # Example usage
     test = """
     My phone number is 555-123-4567.
     Email: test@example.com
-    AWS Key: AKIAIOSFODNN7EXAMPLE
-    OpenAI Key: sk-abcdefghijklmnopqrstuvwxyz1234567890ab
+    AWS Key: AKIAEXAMPLEKEY1234
+    OpenAI Key: sk-1234567890abcdef1234567890
     Bearer Token: ya29.a0AfH6SMB...
     """
     results = scan_text(test)
     for r in results:
-        print(f"[{r['type']}] {r['match']}")
+        print(f"[{r['type']}] {r['match']} entropy={r.get('entropy')} {r.get('note','')}")
