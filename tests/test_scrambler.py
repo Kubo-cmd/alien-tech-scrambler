@@ -15,6 +15,7 @@ from scrambler.chaotic import xor_scramble, xor_unscramble
 from scrambler.diff_privacy import add_laplace_noise, privatize_list
 from scrambler.audio_scrambler import generate_test_signal, fft_phase_roll_scramble, fft_phase_roll_unscramble
 from scrambler.device import generate_base_device, scramble_device_profile
+from scrambler.lattice import generate_lattice_vector, add_lwe_noise, scramble_lattice, unscramble_lattice
 from leakage.scanner import scan_text
 
 
@@ -52,7 +53,7 @@ class TestScrambler(unittest.TestCase):
         un = fft_phase_roll_unscramble(scr, 32)
         self.assertEqual(len(un), len(sig))
         corr = np.corrcoef(sig, un)[0, 1]
-        self.assertGreater(corr, 0.7)  # real FFT roll corr depends on signal
+        self.assertGreater(corr, 0.7)
         print(f"Audio FFT roundtrip corr: {corr:.4f} PASS")
 
     def test_device_scramble(self):
@@ -63,6 +64,14 @@ class TestScrambler(unittest.TestCase):
         self.assertNotEqual(scr["battery_percent"], base["battery_percent"])
         self.assertTrue(len(scr["phone"]) > 20)
         print("Device profile DP+encrypt: PASS")
+
+    def test_lattice_scramble(self):
+        vec = generate_lattice_vector(dim=6, seed=99)
+        scr, err = scramble_lattice(vec, error_bound=3, seed=99)
+        un = unscramble_lattice(scr, err)
+        self.assertTrue(np.array_equal(un, vec))
+        self.assertFalse(np.array_equal(scr, vec))
+        print("Lattice LWE roundtrip: PASS")
 
     def test_leakage_scanner(self):
         txt = "phone: 555-123-4567 email: leak@ex.com key: AKIA1234567890ABCDEF"
@@ -80,11 +89,14 @@ class TestScrambler(unittest.TestCase):
         phone_enc = scramble_phone(dev["phone"])
         dec_phone = unscramble_phone(phone_enc)
         self.assertEqual(dec_phone, dev["phone"])
-        # Scrambled will trigger high-entropy on ciphers, so check no plain phone
         findings = scan_text(json.dumps(scr_dev))
         plain_phones = [f for f in findings if f.get("type") == "phone"]
         self.assertEqual(len(plain_phones), 0)
-        print("Full integration no-plain-leak: PASS")
+        # lattice
+        v = generate_lattice_vector(4)
+        s, e = scramble_lattice(v)
+        self.assertTrue(np.array_equal(unscramble_lattice(s, e), v))
+        print("Full integration no-plain-leak + lattice: PASS")
 
 
 if __name__ == "__main__":
