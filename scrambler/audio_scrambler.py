@@ -20,20 +20,26 @@ def generate_test_signal(duration: float = 0.1, sample_rate: int = 8000) -> np.n
     return signal.astype(np.float64)
 
 
-def fft_phase_roll_scramble(signal: np.ndarray, roll: int = 100) -> np.ndarray:
+def fft_phase_roll_scramble(signal: np.ndarray, roll: int = 100, jitter: float = 0.1) -> np.ndarray:
     """
-    Scramble by rolling the FFT spectrum. Reverses with negative roll.
-    Real freq-domain manipulation used in scramblers.
+    Scramble by rolling the FFT spectrum + add small random phase jitter per sub-band.
+    Jitter makes ML reconstruction (vocoders) harder while keeping reversibility approximate.
+    Real technique variants for stronger voice privacy.
     """
     f = fft(signal)
+    # Roll
     scrambled_f = np.roll(f, roll)
+    # Add jitter: small random phase perturbation
+    if jitter > 0:
+        phase_noise = np.exp(1j * np.random.uniform(-jitter, jitter, len(scrambled_f)))
+        scrambled_f = scrambled_f * phase_noise
     scrambled = np.real(ifft(scrambled_f))
     return scrambled
 
 
-def fft_phase_roll_unscramble(signal: np.ndarray, roll: int = 100) -> np.ndarray:
-    """Reverse the roll."""
-    return fft_phase_roll_scramble(signal, -roll)
+def fft_phase_roll_unscramble(signal: np.ndarray, roll: int = 100, jitter: float = 0.1) -> np.ndarray:
+    """Reverse the roll. Jitter makes perfect reconstruction harder (intentional for ML resistance)."""
+    return fft_phase_roll_scramble(signal, -roll, jitter=0)  # no jitter on reverse for demo
 
 
 def scramble_audio_bytes(audio_bytes: bytes, roll: int = 50) -> bytes:

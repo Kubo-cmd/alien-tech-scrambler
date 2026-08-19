@@ -49,8 +49,8 @@ class TestScrambler(unittest.TestCase):
 
     def test_audio_scramble_roundtrip(self):
         sig = generate_test_signal(0.02)
-        scr = fft_phase_roll_scramble(sig, 32)
-        un = fft_phase_roll_unscramble(scr, 32)
+        scr = fft_phase_roll_scramble(sig, 32, jitter=0.05)
+        un = fft_phase_roll_unscramble(scr, 32, jitter=0.05)
         self.assertEqual(len(un), len(sig))
         corr = np.corrcoef(sig, un)[0, 1]
         self.assertGreater(corr, 0.7)

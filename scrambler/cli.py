@@ -58,8 +58,8 @@ def main() -> None:
         print(json.dumps(scr, indent=2))
     elif args.cmd == "audio":
         sig = generate_test_signal(args.duration)
-        scr = fft_phase_roll_scramble(sig, args.roll)
-        un = fft_phase_roll_unscramble(scr, args.roll)
+        scr = fft_phase_roll_scramble(sig, args.roll, jitter=0.05)
+        un = fft_phase_roll_unscramble(scr, args.roll, jitter=0.05)
         corr = float(np.corrcoef(sig, un)[0,1]) if len(sig)>1 else 0.0
         print(f"Original len: {len(sig)} | Scrambled len: {len(scr)} | Reconstruct corr: {corr:.4f}")
         print("Signal scrambled with FFT roll (reversible). Real freq-domain privacy method.")
@@ -93,6 +93,20 @@ def main() -> None:
     else:
         parser.print_help()
 
+
+if __name__ == "__main__":
+    main()
+
+
+def main():
+    """Entry point for pip installed cli."""
+    import sys
+    if len(sys.argv) > 1:
+        # simple passthrough for demo
+        import subprocess
+        subprocess.call([sys.executable, "-m", "scrambler.cli"] + sys.argv[1:])
+    else:
+        print("alien-tech-scrambler CLI. Use python -m scrambler.cli --help")
 
 if __name__ == "__main__":
     main()

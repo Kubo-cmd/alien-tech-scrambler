@@ -12,6 +12,11 @@ This repository implements a unique orthogonal stack of real, published advanced
    - Deterministic non-linear map (r=4.0) produces pseudo-random XOR layer.
    - Adds diffusion resistant to linear attacks; lightweight.
 
+**Important Clarification on Chaotic Keystream:**
+The logistic map layer provides additional diffusion and obfuscation on top of the primary AES-256-GCM. It is not a standalone cryptographic primitive. AES-256-GCM supplies the authenticated encryption boundary. Chaotic and other layers (DP, lattice, FFT) add privacy perturbation and attribute-level scrambling. 1D chaotic maps can be vulnerable to certain reconstruction attacks if used alone; they are used here strictly for layered mixing.
+
+
+
 3. **LWE Lattice Noise** (Learning With Errors, Regev 2005; post-quantum crypto standard)
    - Adds bounded noise over lattice vectors for post-quantum resistance.
    - Roundtrips via rounding; high correlation preserved.

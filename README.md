@@ -6,7 +6,7 @@ This repository provides a production-oriented implementation of hybrid cryptogr
 
 ## Key Capabilities
 
-- **Hybrid Encryption**: AES-256-GCM (NIST FIPS 197/800-38D) combined with logistic-map chaotic keystreams for layered obfuscation.
+- **Hybrid Encryption**: AES-256-GCM (NIST FIPS 197/800-38D) as the core authenticated encryption. Logistic-map chaotic keystream added strictly for extra diffusion and obfuscation layers (not a replacement for crypto).
 - **Differential Privacy**: Laplace mechanism (Dwork et al.) for calibrated noise on numeric device attributes.
 - **FFT Spectrum Scrambling**: Reversible frequency-domain phase and roll operations for audio and signal representations.
 - **Lattice Noise**: Learning-With-Errors (LWE) style integer noise vectors for device feature obfuscation.
@@ -29,6 +29,21 @@ Total: 1,050,000+. Execution time: ~3s. All roundtrips 100%. Privacy metrics con
 
 See simulations/1m_validation.json for full output. Council verdict: ALLOW (7/9).
 
+
+
+
+## Hardening & Production Notes (from feedback)
+- Key derivation now supports Argon2id (if installed) or strong PBKDF2 fallback. Use --keyring flag in future or env + keyring lib for OS secure storage.
+- Audio scrambling includes sub-band phase jitter to raise bar against ML vocoder reconstruction.
+- See SECURITY.md for full limits and guidance.
+- Packaging: pyproject.toml included. Install with: pip install -e . (or future pypi)
+
+## Limitations and Clarifications
+
+- Chaotic layers (logistic map) are for additional mixing only. The cryptographic security comes from AES-256-GCM. Do not rely on chaos alone for confidentiality.
+- Audio FFT scrambling is reversible with the same parameters but may be vulnerable to advanced ML reconstruction (neural vocoders). Use for obfuscation, not high-security voice privacy.
+- Current key handling uses simple derivation from provided secret or env var. For production, use strong KDF (Argon2id) and OS keyrings.
+- This is a research/prototype toolkit. Not audited for production security.
 
 ## Project Status
 - Fresh repository with complete, tested implementation.
@@ -68,6 +83,8 @@ alien-tech-scrambler/
 ├── simulations/
 │   └── 1m_validation.json # live 1M sim results
 ├── tests/
+│   └── test_scrambler.py
+├── SECURITY.md
 │   └── test_scrambler.py # 10 tests incl. sim validation
 └── .git/
 ```

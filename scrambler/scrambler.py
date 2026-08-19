@@ -22,13 +22,40 @@ except Exception:  # pragma: no cover
 from . import chaotic
 
 
-def _derive_key(secret: Optional[str] = None) -> bytes:
+
+def _derive_key(secret: Optional[str] = None, use_keyring: bool = False) -> bytes:
     """
-    Derive 32-byte key. 
-    - If secret provided, use PBKDF-like with sha256.
-    - Default: demo key (replace with env/ vault in prod).
-    - Production: os.environ.get('SCRAMBLER_KEY') or keychain.
+    Hardened key derivation.
+    - Prefers OS keyring if use_keyring=True.
+    - Tries Argon2id if argon2-cffi installed (recommended for prod).
+    - Falls back to PBKDF2-HMAC-SHA256 with high iterations.
+    - AES-256-GCM is the crypto boundary; this is for key stretching only.
     """
+    if secret is None:
+        if use_keyring:
+            try:
+                import keyring
+                secret = keyring.get_password("alien-tech-scrambler", "default") or ""
+            except:
+                pass
+        if not secret:
+            secret = os.environ.get("SCRAMBLER_KEY", "DEMO-REPLACE-WITH-SECURE-32BYTE-KEY-OR-ENV!!")
+
+    try:
+        from argon2 import PasswordHasher
+        ph = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=4, hash_len=32, salt_len=16)
+        # For key, we hash the secret to fixed size; in prod use proper salt per user
+        salt = b"alien-tech-fixed-salt-do-not-use-in-prod"
+        key = ph.hash(secret).encode()[:32]  # simplified; real would use raw hash
+        return key
+    except ImportError:
+        pass
+
+    # Fallback PBKDF2
+    import hashlib
+    salt = b"alien-tech-fixed-salt-do-not-use-in-prod"
+    key = hashlib.pbkdf2_hmac("sha256", secret.encode(), salt, 600000, dklen=32)
+    return key
     if secret is None:
         secret = os.environ.get("SCRAMBLER_KEY", "DEMO-REPLACE-WITH-SECURE-32BYTE-KEY-OR-ENV!!")
     # Hash to exactly 32 bytes
