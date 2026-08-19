@@ -1,17 +1,27 @@
-# Alien Tech Device Scrambler
+# alien-tech-scrambler
 
-Repository for frontier but legitimately real phone and device scrambling techniques.
-All primitives drawn from published cryptography, differential privacy, and signal processing research.
-No vaporware. Fully executable with real roundtrips and verification.
+Advanced privacy toolkit for phones, devices, and signals.
 
-## Status
-- Repo initialized fresh with minimal history.
-- Core + advanced modules complete and tested.
-- Hybrid encryption, chaotic layers, DP, FFT audio, device profiles, leakage scanner.
-- CLI and tests included.
-- All verified via live execution (see below).
+This repository provides a production-oriented implementation of hybrid cryptographic and privacy techniques for data obfuscation. All methods are drawn from peer-reviewed and standardized research in cryptography, differential privacy, and digital signal processing. The toolkit includes full executable code, roundtrip verification, and a command-line interface.
 
-## Real Alien Tech (Legit)
+## Key Capabilities
+
+- **Hybrid Encryption**: AES-256-GCM (NIST FIPS 197/800-38D) combined with logistic-map chaotic keystreams for layered obfuscation.
+- **Differential Privacy**: Laplace mechanism (Dwork et al.) for calibrated noise on numeric device attributes.
+- **FFT Spectrum Scrambling**: Reversible frequency-domain phase and roll operations for audio and signal representations.
+- **Lattice Noise**: Learning-With-Errors (LWE) style integer noise vectors for device feature obfuscation.
+- **Entropy Leakage Scanner**: Pattern matching plus Shannon entropy analysis to detect potential secrets in text.
+- **Device Profile Generation**: Deterministic synthetic profiles with encryption and privacy perturbation.
+
+Every primitive ships with tests that confirm lossless reconstruction where applicable and measurable privacy effects.
+
+## Project Status
+- Fresh repository with complete, tested implementation.
+- Full module suite: hybrid encryption, chaotic layers, differential privacy, FFT audio scrambling, device profiles, and leakage scanner.
+- Command-line interface and comprehensive test suite included.
+- All features verified through live execution and roundtrip tests.
+
+## Implemented Methods
 1. **Hybrid Encryption**: AES-256-GCM (NIST FIPS 197/800-38D) + logistic map chaotic XOR (chaos crypto papers e.g. "Chaos-based cryptography" surveys).
 2. **Differential Privacy**: Laplace mechanism (Dwork, McSherry et al. 2006+). Calibrated noise for numeric device fields.
 3. **FFT Spectrum Scrambling**: Frequency domain roll/phase for audio/phone signals. Reverses with inverse transform. Variants in real voice privacy systems.
@@ -19,7 +29,7 @@ No vaporware. Fully executable with real roundtrips and verification.
 5. **Entropy-Augmented Leakage Scanner**: Regex for known secrets + Shannon entropy to flag high-randomness strings (standard in secret scanners like trufflehog).
 6. **Device Profile Obfuscation**: Seed-deterministic fake profiles + DP perturbation + encrypted IDs.
 
-These are production-grade primitives used in research prototypes and privacy tools. Not toy.
+These primitives are drawn from established research and are suitable for integration into privacy-focused applications and prototypes.
 
 ## Structure
 ```
