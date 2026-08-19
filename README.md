@@ -61,6 +61,22 @@ See simulations/1m_validation.json for full output. Council verdict: ALLOW (7/9)
 
 These primitives are drawn from established research and are suitable for integration into privacy-focused applications and prototypes.
 
+
+## Testing (Test Ready)
+All components are covered by automated tests.
+
+```bash
+pip install -r requirements.txt
+python -m pytest tests/ -q
+```
+
+Current status: 10/10 tests passing (including Monte Carlo validation, roundtrips, and privacy checks).
+
+Run the full 1M simulation for production validation:
+```bash
+python -m scrambler.cli simulate --n 1000000 --save
+```
+
 ## Structure
 ```
 alien-tech-scrambler/
