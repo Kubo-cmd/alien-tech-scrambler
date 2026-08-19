@@ -1,5 +1,5 @@
 """
-Alien Tech Scrambler package.
+Privacy toolkit for phone and device data obfuscation.
 Exports core hybrid scrambler, chaotic, dp, audio, device, lattice modules.
 All techniques are real, published privacy/cryptography methods.
 Lattice adds post-quantum LWE-inspired uniqueness.

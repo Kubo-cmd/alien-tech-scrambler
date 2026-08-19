@@ -125,7 +125,7 @@ Expects all PASS with roundtrips, correlations, no leaks in scrambled output.
 - Scrambling reduces but does not eliminate all side channels. Combine with Tor, VPN, etc.
 - This is research-grade privacy augmentation tool. Audit before sensitive use.
 
-## Why "Alien Tech"
-Combines multiple orthogonal real advanced methods into one coherent stack for device/phone privacy. Unsolved in most consumer tools. High success rate implementations here.
+## Design Rationale
+This toolkit integrates multiple orthogonal, research-backed methods into a single coherent stack for phone and device privacy enhancement. The combination of established cryptographic standards with advanced privacy mechanisms provides capabilities not commonly available in consumer tools.
 
 PATTERN PERSISTS.

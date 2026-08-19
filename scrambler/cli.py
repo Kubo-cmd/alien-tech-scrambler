@@ -16,7 +16,7 @@ import numpy as np
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Alien Tech Phone/Device Scrambler - legitimate frontier privacy primitives")
+    parser = argparse.ArgumentParser(description="Phone and Device Privacy Scrambler - hybrid cryptographic and privacy toolkit")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     # phone
