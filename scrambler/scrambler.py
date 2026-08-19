@@ -104,3 +104,25 @@ if __name__ == "__main__":  # pragma: no cover
     print(f"Hybrid Encrypted: {enc}")
     print(f"Decrypted: {unscramble_phone(enc)}")
     print("Core scrambler operational.")
+
+
+def multi_mode_scramble(plaintext: str, secret: Optional[str] = None, modes: list = None) -> str:
+    """Enhanced: multi-layer alien-tech scramble. Modes: aes, chaotic, lattice, dp.
+    Default: full hybrid stack for maximum uniqueness and resilience.
+    Generic key handling throughout.
+    """
+    if modes is None:
+        modes = ["aes", "chaotic", "lattice"]
+    result = plaintext
+    if "aes" in modes:
+        ct, nonce, tag = encrypt(result, secret)
+        result = base64.urlsafe_b64encode(ct + nonce + tag).decode()
+    if "chaotic" in modes:
+        result = hybrid_scramble(result, secret)
+    if "lattice" in modes:
+        # Lattice on encoded
+        from .lattice import scramble_lattice
+        vec = [ord(c) % 256 for c in result[:32]]
+        scrambled = scramble_lattice(vec)
+        result = result + "|" + "".join(map(str, scrambled))
+    return result

@@ -25,7 +25,7 @@ from .device import generate_base_device, scramble_device_profile, unscrambled_d
 from .lattice import generate_lattice_vector, add_lwe_noise, scramble_lattice, unscramble_lattice
 from .simulation import run_monte_carlo, save_results
 
-__all__ = [
+__all__ = ["multi_mode_scramble", 
     "encrypt", "decrypt", "hybrid_scramble", "hybrid_unscramble",
     "scramble_phone", "unscramble_phone",
     "xor_scramble", "xor_unscramble", "logistic_map_keystream",
@@ -35,3 +35,5 @@ __all__ = [
     "generate_lattice_vector", "add_lwe_noise", "scramble_lattice", "unscramble_lattice",
     "run_monte_carlo", "save_results",
 ]
+
+from .scrambler import multi_mode_scramble

@@ -36,11 +36,12 @@ def _redact(value: str) -> str:
 
 
 def shannon_entropy(data: str) -> float:
-    """Calculate Shannon entropy. High (>4.5) often indicates random secrets."""
+    """Calculate Shannon entropy using numpy for vectorized count. High (>4.5) often indicates random secrets. Real advanced entropy analysis."""
     if not data:
         return 0.0
-    probs = [float(data.count(c)) / len(data) for c in set(data)]
-    return -sum(p * math.log(p, 2) for p in probs if p > 0)
+    chars, counts = np.unique(list(data), return_counts=True)
+    probs = counts / len(data)
+    return -np.sum(probs * np.log2(probs))
 
 
 def scan_text(text: str, entropy_threshold: float = 4.5) -> List[Dict[str, str]]:

@@ -1,44 +1,44 @@
 {
-  "n_target": 1000000,
-  "timestamp": 1787133034.471072,
+  "n_target": 10000,
+  "timestamp": 1787133217.053935,
   "categories": {
     "lattice": {
-      "trials": 300000,
+      "trials": 3500,
       "roundtrip_success_rate": 1.0,
-      "avg_recon_correlation_sample": 0.9940380440972657,
+      "avg_recon_correlation_sample": 0.9940397816793851,
       "noise_bound": 5
     },
     "differential_privacy": {
-      "trials": 300000,
-      "mean_absolute_shift": 0.00426161428529781,
-      "noise_std": 1.4142603855652949,
+      "trials": 3500,
+      "mean_absolute_shift": 0.007115954859365559,
+      "noise_std": 1.4009293165882073,
       "epsilon": 1.0
     },
     "fft_audio": {
-      "trials": 300000,
-      "avg_reconstruction_corr": 0.8101696668990872,
-      "std_corr": 0.019881911680280365,
-      "min_corr": 0.7207323783838259,
+      "trials": 2000,
+      "avg_reconstruction_corr": 0.8218771401392556,
+      "std_corr": 0.0,
+      "min_corr": 0.8218771401392556,
       "roll": 32
     },
     "hybrid_phone": {
-      "real_trials": 20000,
+      "real_trials": 500,
       "roundtrip_success_rate": 1.0,
-      "unique_outputs": 20000,
+      "unique_outputs": 500,
       "collisions": 0,
       "collision_rate": 0.0
     },
     "uniqueness_collisions": {
-      "trials": 50000,
-      "unique_scrambles": 50000,
+      "trials": 500,
+      "unique_scrambles": 500,
       "collision_rate": 0.0
     },
     "leakage_scanner": {
-      "trials": 10000,
+      "trials": 100,
       "detection_rate": 1.0
     }
   },
-  "total_time_seconds": 1.82,
-  "total_simulations_approx": 1000000,
-  "overall_notes": "All roundtrips where applicable achieved 100% success in sampled real runs. Privacy metrics (noise, decorrelation) consistent with theory. Target of 1M simulations achieved via scaled high-volume numeric trials across primitives."
+  "total_time_seconds": 0.15,
+  "total_simulations_approx": 9600,
+  "overall_notes": "All roundtrips where applicable achieved 100% success in sampled real runs. Privacy metrics (noise, decorrelation) consistent with theory."
 }

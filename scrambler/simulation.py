@@ -28,7 +28,7 @@ def run_monte_carlo(n: int = 1_000_000, seed: int = 42, verbose: bool = True) ->
     results: Dict[str, Any] = {"n_target": n, "timestamp": time.time(), "categories": {}}
 
     # 1. Lattice LWE noise: n/4 trials
-    n_lat = int(n * 0.3)
+    n_lat = int(n * 0.35)
     dim = 8
     bases = np.random.randint(0, 100, size=(n_lat, dim)).astype(np.int64)
     errors = np.random.randint(-5, 6, size=(n_lat, dim))
@@ -44,7 +44,7 @@ def run_monte_carlo(n: int = 1_000_000, seed: int = 42, verbose: bool = True) ->
     }
 
     # 2. Differential Privacy Laplace: n/4
-    n_dp = int(n * 0.3)
+    n_dp = int(n * 0.35)
     vals = np.random.normal(50, 10, n_dp).tolist()
     noisy = diff_privacy.privatize_list(vals, epsilon=1.0)
     noisy_arr = np.array(noisy)
@@ -58,9 +58,9 @@ def run_monte_carlo(n: int = 1_000_000, seed: int = 42, verbose: bool = True) ->
     }
 
     # 3. FFT Audio/ signal scrambling: n/4
-    n_fft = int(n * 0.3)
+    n_fft = int(n * 0.2)
     corrs = []
-    for _ in range(min(n_fft, 5000)):  # cap loops for speed, vectorize inner
+    for _ in range(min(n_fft, 20000)):  # cap loops for speed, vectorize inner
         sig = audio_scrambler.generate_test_signal(0.01)
         scr = audio_scrambler.fft_phase_roll_scramble(sig, roll=32)
         un = audio_scrambler.fft_phase_roll_unscramble(scr, roll=32)
@@ -76,7 +76,7 @@ def run_monte_carlo(n: int = 1_000_000, seed: int = 42, verbose: bool = True) ->
     }
 
     # 4. Hybrid phone scramble roundtrips + collisions (real calls for subset + proxy)
-    n_hyb = min(20000, n // 50)  # real crypto calls ~20k feasible
+    n_hyb = min(50000, n // 20)  # real crypto calls ~20k feasible
     successes = 0
     enc_set = set()
     for i in range(n_hyb):
@@ -97,7 +97,7 @@ def run_monte_carlo(n: int = 1_000_000, seed: int = 42, verbose: bool = True) ->
     }
 
     # 5. Collision / uniqueness sim across random inputs (proxy for 1M scale)
-    n_coll = int(n * 0.1)
+    n_coll = int(n * 0.05)
     random_inputs = [f"dev-{np.random.randint(10**9, 10**10)}" for _ in range(min(50000, n_coll))]
     encs = [core_scrambler.hybrid_scramble(inp) for inp in random_inputs]
     unique_encs = len(set(encs))
