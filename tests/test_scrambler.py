@@ -97,6 +97,16 @@ class TestScrambler(unittest.TestCase):
         s, e = scramble_lattice(v)
         self.assertTrue(np.array_equal(unscramble_lattice(s, e), v))
         print("Full integration no-plain-leak + lattice: PASS")
+    def test_monte_carlo_simulation_small(self):
+        from scrambler.simulation import run_monte_carlo
+        res = run_monte_carlo(n=1000, seed=123, verbose=False)
+        self.assertEqual(res["n_target"], 1000)
+        self.assertGreater(res["total_simulations_approx"], 500)
+        lat = res["categories"]["lattice"]
+        self.assertEqual(lat["roundtrip_success_rate"], 1.0)
+        hyb = res["categories"]["hybrid_phone"]
+        self.assertEqual(hyb["roundtrip_success_rate"], 1.0)
+        print("Monte Carlo sim (small N): PASS")
 
 
 if __name__ == "__main__":

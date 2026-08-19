@@ -39,9 +39,11 @@ def main() -> None:
     p_scan.add_argument("text", nargs="?", default=None)
     p_scan.add_argument("--file", help="read from file")
 
-    # hybrid demo
-    p_hybrid = sub.add_parser("hybrid", help="Hybrid scramble demo")
-    p_hybrid.add_argument("text", default="555-999-0000")
+    # simulate
+    p_sim = sub.add_parser("simulate", help="Run Monte Carlo simulations (1M target)")
+    p_sim.add_argument("--n", type=int, default=1000000, help="number of simulations")
+    p_sim.add_argument("--seed", type=int, default=42)
+    p_sim.add_argument("--save", action="store_true", help="save results to simulations/")
 
     args = parser.parse_args()
 
@@ -77,6 +79,17 @@ def main() -> None:
         print(f"Input: {args.text}")
         print(f"Hybrid: {enc}")
         print(f"Roundtrip: {dec}")
+    elif args.cmd == "simulate":
+        from .simulation import run_monte_carlo, save_results
+        res = run_monte_carlo(n=args.n, seed=args.seed, verbose=True)
+        if args.save:
+            save_results(res)
+        print("=== SIMULATION SUMMARY ===")
+        print(f"Target n: {res['n_target']}")
+        print(f"Actual sims approx: {res.get('total_simulations_approx', 'N/A')}")
+        print(f"Time: {res['total_time_seconds']}s")
+        for cat, stats in res.get("categories", {}).items():
+            print(f"  {cat}: {stats}")
     else:
         parser.print_help()
 

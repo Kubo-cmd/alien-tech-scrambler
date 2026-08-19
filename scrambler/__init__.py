@@ -23,6 +23,7 @@ from .audio_scrambler import (
 )
 from .device import generate_base_device, scramble_device_profile, unscrambled_device_summary
 from .lattice import generate_lattice_vector, add_lwe_noise, scramble_lattice, unscramble_lattice
+from .simulation import run_monte_carlo, save_results
 
 __all__ = [
     "encrypt", "decrypt", "hybrid_scramble", "hybrid_unscramble",
@@ -32,4 +33,5 @@ __all__ = [
     "generate_test_signal", "fft_phase_roll_scramble", "fft_phase_roll_unscramble", "scramble_audio_bytes",
     "generate_base_device", "scramble_device_profile", "unscrambled_device_summary",
     "generate_lattice_vector", "add_lwe_noise", "scramble_lattice", "unscramble_lattice",
+    "run_monte_carlo", "save_results",
 ]
