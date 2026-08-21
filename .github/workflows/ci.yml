@@ -17,6 +17,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install deps (pinned to verified-passing versions)
         run: |
-          pip install numpy==2.0.2 cryptography==49.0.0 argon2-cffi keyring pytest pytest-asyncio
+          pip install numpy==2.0.2 scipy==1.14.1 cryptography==49.0.0 argon2-cffi keyring pytest pytest-asyncio
       - name: Run tests
         run: python -m pytest tests/ -q
