@@ -83,6 +83,15 @@ class TestScrambler(unittest.TestCase):
         self.assertTrue(any("entropy" in f for f in findings))
         print("Leakage + entropy scan: PASS")
 
+    def test_derive_key_deterministic(self):
+        """Key derivation must be deterministic (same key every call)."""
+        from scrambler.scrambler import _derive_key
+
+        k1 = _derive_key("test-secret")
+        k2 = _derive_key("test-secret")
+        self.assertEqual(k1, k2)
+        self.assertEqual(len(k1), 32)
+
     def test_full_integration(self):
         dev = generate_base_device()
         scr_dev = scramble_device_profile(dev)

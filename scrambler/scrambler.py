@@ -42,11 +42,21 @@ def _derive_key(secret: Optional[str] = None, use_keyring: bool = False) -> byte
             secret = os.environ.get("SCRAMBLER_KEY", "DEMO-REPLACE-WITH-SECURE-32BYTE-KEY-OR-ENV!!")
 
     try:
-        from argon2 import PasswordHasher
-        ph = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=4, hash_len=32, salt_len=16)
-        # For key, we hash the secret to fixed size; in prod use proper salt per user
-        salt = b"alien-tech-fixed-salt-do-not-use-in-prod"
-        key = ph.hash(secret).encode()[:32]  # simplified; real would use raw hash
+        from argon2.low_level import Type, hash_secret_raw
+
+        # Deterministic KDF: fixed salt + raw hash so encrypt() and decrypt()
+        # always derive the SAME key. PasswordHasher().hash() salts randomly
+        # per call and must never be used for key derivation.
+        salt = b"alien-tech-fixd"  # exactly 16 bytes
+        key = hash_secret_raw(
+            secret.encode("utf-8"),
+            salt=salt,
+            time_cost=3,
+            memory_cost=65536,
+            parallelism=4,
+            hash_len=32,
+            type=Type.ID,
+        )
         return key
     except ImportError:
         pass
